@@ -1,0 +1,25 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirect</title>
+</head>
+<body>
+
+    <script>
+
+// check if user already logged in
+if(localStorage.getItem("loggedIn"))
+{
+    // go to dashboard
+    window.location.href = "dashboard.html";
+}
+else
+{
+    // go to login page
+    window.location.href = "login.html";
+}
+
+    </script>
+
+</body>
+</html>

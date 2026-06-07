@@ -1,0 +1,414 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Student Management</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+
+        body {
+            background: #f4f6f9;
+            font-family: Segoe UI;
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+        }
+
+        .card {
+            border-radius: 10px;
+        }
+
+        .table th {
+            background: #343a40;
+            color: white;
+        }
+
+        .stats-card {
+            border-left: 4px solid #0d6efd;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark bg-dark px-4">
+        <span class="navbar-brand">Student Management System</span>
+
+        <button onclick="logout()" class="btn btn-outline-light btn-sm">
+            Logout
+        </button>
+
+    </nav>
+
+
+    <div class="container mt-4">
+
+        <!-- DASHBOARD HEADER -->
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+
+            <div>
+                <h4 class="mb-0">Admin Dashboard</h4>
+                <small class="text-muted">Manage student records</small>
+            </div>
+
+            <button class="btn btn-primary" onclick="openAddModal()">
+                + Add Student
+            </button>
+
+        </div>
+
+
+        <!-- STATS CARD -->
+
+        <div class="card shadow-sm mb-4 stats-card">
+
+            <div class="card-body d-flex justify-content-between align-items-center">
+
+                <div>
+                    <h6 class="text-muted">Total Students</h6>
+                    <h3 id="studentCount">0</h3>
+                </div>
+
+                <div style="font-size:35px">🎓</div>
+
+            </div>
+
+        </div>
+
+
+        <!-- SEARCH -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-body">
+
+                <input type="text"
+                       id="searchBox"
+                       class="form-control"
+                       placeholder="Search student..."
+                       onkeyup="searchStudent()">
+
+            </div>
+
+        </div>
+
+
+        <!-- STUDENT TABLE -->
+
+        <div class="card shadow">
+
+            <div class="card-body p-0">
+
+                <table class="table table-hover text-center mb-0">
+
+                    <thead>
+
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Course</th>
+                            <th>Year</th>
+                            <th>Age</th>
+                            <th>Action</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="studentTable"></tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- MODAL -->
+
+    <div class="modal fade" id="studentModal">
+
+        <div class="modal-dialog">
+
+            <div class="modal-content">
+
+                <div class="modal-header bg-primary text-white">
+
+                    <h5 class="modal-title" id="modalTitle">Add Student</h5>
+
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <input type="hidden" id="studentId">
+
+                    <input id="name" class="form-control mb-3" placeholder="Name">
+
+                    <input id="email" type="email" class="form-control mb-3" placeholder="Email">
+
+
+                    <select id="course" class="form-control mb-3">
+
+                        <option value="">Select Course</option>
+                        <option value="BCS">BCS</option>
+                        <option value="BCA">BCA</option>
+                        <option value="B.COM">B.COM</option>
+
+                    </select>
+
+
+                    <select id="year" class="form-control mb-3">
+
+                        <option value="">Select Year</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+
+                    </select>
+
+
+                    <input id="age" type="number" class="form-control" placeholder="Age">
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button class="btn btn-success" onclick="saveStudent()">Save</button>
+
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <script>
+
+
+        if (!localStorage.getItem("loggedIn")) {
+            window.location = "login.html";
+        }
+
+
+        const apiUrl = "https://localhost:44364/api/students";
+
+        let modal = new bootstrap.Modal(document.getElementById('studentModal'));
+
+
+
+        async function loadStudents() {
+
+            const response = await fetch(apiUrl);
+
+            const data = await response.json();
+
+            let rows = "";
+
+
+            data.forEach(s => {
+
+                rows += `
+
+<tr>
+
+<td>${s.id}</td>
+<td>${s.name}</td>
+<td>${s.email}</td>
+<td>${s.course}</td>
+<td>${s.year}</td>
+<td>${s.age}</td>
+
+<td>
+
+<button class="btn btn-warning btn-sm me-1" onclick="editStudent(${s.id})">
+Edit
+</button>
+
+<button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id})">
+Delete
+</button>
+
+</td>
+
+</tr>
+
+`;
+
+            });
+
+
+            document.getElementById("studentTable").innerHTML = rows;
+
+            document.getElementById("studentCount").innerText = data.length;
+
+        }
+
+
+
+        function openAddModal() {
+
+            document.getElementById("modalTitle").innerText = "Add Student";
+
+            document.getElementById("studentId").value = "";
+
+            document.getElementById("name").value = "";
+            document.getElementById("email").value = "";
+            document.getElementById("course").value = "";
+            document.getElementById("year").value = "";
+            document.getElementById("age").value = "";
+
+            modal.show();
+
+        }
+
+
+
+        async function saveStudent() {
+
+            const id = document.getElementById("studentId").value;
+
+            const student = {
+
+                name: document.getElementById("name").value,
+
+                email: document.getElementById("email").value,
+
+                course: document.getElementById("course").value,
+
+                year: parseInt(document.getElementById("year").value),
+
+                age: parseInt(document.getElementById("age").value)
+
+            };
+            alert("student add succesfully");
+
+
+            if (id === "") {
+
+                await fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(student)
+                });
+
+            } else {
+
+                student.id = parseInt(id);
+
+                await fetch(`${apiUrl}/${id}`, {
+
+                    method: "PUT",
+
+                    headers: { "Content-Type": "application/json" },
+
+                    body: JSON.stringify(student)
+
+                });
+                
+            }
+
+
+            modal.hide();
+
+            loadStudents();
+
+        }
+
+
+
+        async function editStudent(id) {
+
+            const response = await fetch(`${apiUrl}/${id}`);
+
+            const student = await response.json();
+
+            document.getElementById("modalTitle").innerText = "Edit Student";
+
+            document.getElementById("studentId").value = student.id;
+
+            document.getElementById("name").value = student.name;
+
+            document.getElementById("email").value = student.email;
+
+            document.getElementById("course").value = student.course;
+
+            document.getElementById("year").value = student.year;
+
+            document.getElementById("age").value = student.age;
+
+            modal.show();
+
+        }
+
+
+
+        async function deleteStudent(id) {
+
+            const confirmDelete = confirm("Are you sure you want to delete this student?");
+
+            if (!confirmDelete) return;
+
+            await fetch(`${apiUrl}/${id}`, {
+                method: "DELETE"
+            });
+
+            loadStudents();
+
+        }
+
+
+
+        function searchStudent() {
+
+            const value = document.getElementById("searchBox").value.toLowerCase();
+
+            const rows = document.querySelectorAll("#studentTable tr");
+
+            rows.forEach(row => {
+
+                const text = row.innerText.toLowerCase();
+
+                row.style.display = text.includes(value) ? "" : "none";
+
+            });
+
+        }
+
+
+
+        function logout() {
+
+            localStorage.removeItem("loggedIn");
+
+            window.location = "login.html";
+
+        }
+
+
+        loadStudents();
+
+    </script>
+
+</body>
+</html>
